@@ -44,7 +44,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
     private void Start()
     {
         Lives = PLAYER_LIVES;
@@ -71,7 +70,6 @@ public class Player : MonoBehaviour
 
     private void PlayerDied()
     {
-        //OnPlayerDied -= PlayerDied;
         OnPlayerDied = null;
         OnPlayerHit = null;
         Target.onTargetDestroyed -= AddScore;
@@ -80,23 +78,23 @@ public class Player : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    // Update is called once per frame
     private void Update()
     {
         HVal = Input.GetAxis("Horizontal");
 
         if (HVal != 0F)
         {
-            //if (movementCommand != null)
-            //{
-            //    movementCommand.Execute();
-            //}
             movementCommand?.Execute();
         }
 
         if (Input.GetButtonDown("Fire1"))
         {
             shootCommand?.Execute();
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            shootCommand?.ActivateTripleShotDecorator();
         }
     }
 }
