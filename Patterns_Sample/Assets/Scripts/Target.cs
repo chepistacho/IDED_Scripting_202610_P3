@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
 public class Target : MonoBehaviour, IFactoryProduct
@@ -13,14 +13,32 @@ public class Target : MonoBehaviour, IFactoryProduct
     [SerializeField]
     private int scoreAdd = 10;
 
+    private ITargetPool targetPool;
+
     public delegate void OnTargetDestroyed(int scoreAdd);
 
     public static event OnTargetDestroyed onTargetDestroyed;
 
-    private void Start()
+    private void Awake()
     {
         currentHP = maxHP;
-        Destroy(gameObject, TIME_TO_DESTROY);
+    }
+
+    public void SetPool(ITargetPool targetPool)
+    {
+        this.targetPool = targetPool;
+    }
+
+    public void ResetTarget(bool active)
+    {
+        CancelInvoke("ReturnToPool");
+        currentHP = maxHP;
+        gameObject.SetActive(active);
+
+        if (active)
+        {
+            Invoke("ReturnToPool", TIME_TO_DESTROY);
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -29,20 +47,37 @@ public class Target : MonoBehaviour, IFactoryProduct
 
         if (collidedObjectLayer.Equals(Utils.BulletLayer))
         {
-            Pool.Instance.ReturnBullet(collision.gameObject.GetComponent<Bullet>());
+            Bullet bullet = collision.gameObject.GetComponent<Bullet>();
+
+            if (bullet != null)
+            {
+                Pool.Instance.ReturnBullet(bullet);
+            }
 
             currentHP -= 1;
 
             if (currentHP <= 0)
             {
                 onTargetDestroyed?.Invoke(scoreAdd);
-                Destroy(gameObject);
+                ReturnToPool();
             }
         }
         else if (collidedObjectLayer.Equals(Utils.PlayerLayer) ||
             collidedObjectLayer.Equals(Utils.KillVolumeLayer))
         {
             Player.Instance.OnPlayerHit?.Invoke();
+            ReturnToPool();
+        }
+    }
+
+    private void ReturnToPool()
+    {
+        if (targetPool != null)
+        {
+            targetPool.ReturnTarget(this);
+        }
+        else
+        {
             Destroy(gameObject);
         }
     }
